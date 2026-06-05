@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Plus, Star, Trash2, Pencil, X } from 'lucide-react';
+import { MapPin, Plus, Star, Trash2, Pencil, X, Navigation, Loader2 } from 'lucide-react';
+import { clsx } from 'clsx';
 import { Header } from '@/components/layout/Header';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { useAppStore } from '@/store/useAppStore';
 import { useFullWeather } from '@/hooks/useWeather';
+import { useDetectLocation, DETECTED_LOCATION_ID } from '@/hooks/useDetectLocation';
 import { WeatherIcon } from '@/components/weather/WeatherIcon';
 import { formatTemp, getEnrichedCurrent } from '@/utils/weatherHelpers';
 import type { Location } from '@/types';
@@ -26,6 +28,7 @@ function LocationWeatherMini({ loc }: { loc: Location }) {
 
 export function Locations() {
   const { locations, addLocation, updateLocation, removeLocation, setDefaultLocation } = useAppStore();
+  const { detectLocation, isDetecting, error: detectError, clearError } = useDetectLocation();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', lat: '', lon: '', county: '', cropType: '' });
@@ -62,15 +65,60 @@ export function Locations() {
     setShowForm(true);
   };
 
+  const handleUseMyLocation = async () => {
+    clearError();
+    const detected = await detectLocation();
+    if (detected) {
+      setDefaultLocation(DETECTED_LOCATION_ID);
+      resetForm();
+    }
+  };
+
+  const handleFillFormFromLocation = async () => {
+    clearError();
+    const detected = await detectLocation();
+    if (detected) {
+      setForm({
+        name: detected.name,
+        lat: String(detected.lat),
+        lon: String(detected.lon),
+        county: detected.county ?? '',
+        cropType: detected.cropType ?? 'Auto-detected',
+      });
+      setEditingId(null);
+      setShowForm(true);
+    }
+  };
+
   return (
     <div>
       <Header title="Farm Locations" subtitle="Manage monitored fields and set your default" />
 
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
+        <button
+          onClick={handleUseMyLocation}
+          disabled={isDetecting}
+          className={clsx(
+            'inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-300',
+            isDetecting
+              ? 'border-accent/20 bg-accent/5 text-accent/60'
+              : 'border-accent/30 bg-accent/10 text-accent-glow hover:border-accent/50 hover:bg-accent/15'
+          )}
+        >
+          {isDetecting ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Detecting...</>
+          ) : (
+            <><Navigation className="h-4 w-4" /> Use my location</>
+          )}
+        </button>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-primary">
           <Plus className="h-4 w-4" /> Add Location
         </button>
       </div>
+
+      {detectError && !showForm && (
+        <p className="mb-4 text-right text-xs text-red-400">{detectError}</p>
+      )}
 
       <AnimatePresence>
         {showForm && (
@@ -91,9 +139,26 @@ export function Locations() {
                 <input className="input-field" placeholder="Latitude" type="number" step="any" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} required />
                 <input className="input-field" placeholder="Longitude" type="number" step="any" value={form.lon} onChange={(e) => setForm({ ...form, lon: e.target.value })} required />
                 <input className="input-field sm:col-span-2" placeholder="County / Region" value={form.county} onChange={(e) => setForm({ ...form, county: e.target.value })} />
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                  {!editingId && (
+                    <button
+                      type="button"
+                      onClick={handleFillFormFromLocation}
+                      disabled={isDetecting}
+                      className="btn-ghost text-xs"
+                    >
+                      {isDetecting ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Detecting...</>
+                      ) : (
+                        <><Navigation className="h-3 w-3" /> Fill from my location</>
+                      )}
+                    </button>
+                  )}
                   <button type="submit" className="btn-primary">{editingId ? 'Save Changes' : 'Add Location'}</button>
                 </div>
+                {detectError && showForm && (
+                  <p className="sm:col-span-2 text-xs text-red-400">{detectError}</p>
+                )}
               </form>
             </AnimatedCard>
           </motion.div>
@@ -106,7 +171,11 @@ export function Locations() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-xl bg-accent/10 p-2.5">
-                  <MapPin className="h-5 w-5 text-accent" />
+                  {loc.id === DETECTED_LOCATION_ID ? (
+                    <Navigation className="h-5 w-5 text-accent" />
+                  ) : (
+                    <MapPin className="h-5 w-5 text-accent" />
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">

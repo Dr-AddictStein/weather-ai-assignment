@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { RiskBadge } from '@/components/ui/RiskBadge';
 import { RiskSummaryCards } from '@/components/weather/RiskSummaryCards';
+import { LocationSwitcher } from '@/components/weather/LocationSwitcher';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAppStore } from '@/store/useAppStore';
@@ -20,8 +22,25 @@ const ratingStyles: Record<FieldWorkWindow['rating'], string> = {
 };
 
 export function Recommendations() {
-  const location = useAppStore((s) => s.getDefaultLocation());
+  const defaultLocation = useAppStore((s) => s.getDefaultLocation());
+  const locations = useAppStore((s) => s.locations);
+  const setDefaultLocation = useAppStore((s) => s.setDefaultLocation);
   const units = useAppStore((s) => s.units);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedId && defaultLocation) {
+      setSelectedId(defaultLocation.id);
+    }
+  }, [defaultLocation, selectedId]);
+
+  const location = locations.find((l) => l.id === selectedId) ?? defaultLocation;
+
+  const handleSelectLocation = (id: string) => {
+    setSelectedId(id);
+    setDefaultLocation(id);
+  };
+
   const { data, isLoading, isError, error, refetch } = useFullWeather(location);
 
   const risks = data ? computeAllRisks(data, units) : null;
@@ -35,6 +54,12 @@ export function Recommendations() {
       <Header
         title="Smart Recommendations"
         subtitle="Rule-based intelligence — no AI quota consumed"
+      />
+
+      <LocationSwitcher
+        selectedId={selectedId}
+        onSelect={handleSelectLocation}
+        activeLayoutId="recommendations-location-active"
       />
 
       {isLoading && <LoadingState message="Analyzing conditions..." />}
