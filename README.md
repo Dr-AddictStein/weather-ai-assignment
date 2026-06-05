@@ -2,6 +2,8 @@
 
 **ClimateOS** is a smart weather-and-forestry operations web application built on the [WeatherAI](https://api.weather-ai.co) free-tier API. It gives farmers and field operators a single dashboard to monitor weather, assess operational risk, run tree canopy analysis from aerial images, and stay within API quotas — all through one secure backend gateway.
 
+**Live demo:** [weather-ai-assignment.vercel.app](https://weather-ai-assignment.vercel.app)
+
 ---
 
 ## Table of Contents
@@ -53,6 +55,7 @@ Core workflow:
 ### Locations (`/locations`)
 
 - Add, edit, and delete farm locations (name, lat/lon, county, crop type)
+- **Use my location** to detect and add your current position
 - Set a default location for the app header
 - Per-location mini weather card (temperature + icon)
 
@@ -66,6 +69,7 @@ Core workflow:
 ### Smart Recommendations (`/recommendations`)
 
 - Rule-based intelligence (runs locally — **does not consume AI quota**)
+- Location switcher and **Use my location**
 - Rain, heat, and wind risk cards with explanations
 - Field work windows: Early Morning / Midday / Late Afternoon ratings
 - 24-hour and 7-day action checklists
@@ -172,31 +176,32 @@ flowchart LR
 ### 1. Clone / open the project
 
 ```bash
-cd climateos
+git clone https://github.com/Dr-AddictStein/weather-ai-assignment.git
+cd weather-ai-assignment/climateos
 ```
 
 ### 2. Install dependencies
 
 ```bash
-# Install both frontend and backend
+# From climateos/
 npm run install:all
 ```
 
 Or install individually:
 
 ```bash
-cd backend && npm install
+cd climateos/backend && npm install
 cd ../frontend && npm install
 ```
 
 ### 3. Configure the backend
 
 ```bash
-cd backend
+cd climateos/backend
 cp .env.example .env
 ```
 
-Edit `backend/.env` and set your WeatherAI credentials:
+Edit `climateos/backend/.env` and set your WeatherAI credentials:
 
 ```env
 WEATHERAI_BASE_URL=https://api.weather-ai.co
@@ -248,13 +253,13 @@ Open **http://localhost:5173** in your browser.
 
 | Command | Location | Description |
 |---|---|---|
-| `npm run dev` | `backend/` | Start API server with hot reload |
-| `npm run dev` | `frontend/` | Start Vite dev server |
+| `npm run dev` | `climateos/backend/` | Start API server with hot reload |
+| `npm run dev` | `climateos/frontend/` | Start Vite dev server |
 | `npm run dev:backend` | `climateos/` | Shortcut for backend dev |
 | `npm run dev:frontend` | `climateos/` | Shortcut for frontend dev |
 | `npm run build` | `climateos/` | Build both projects for production |
-| `npm start` | `backend/` | Run compiled backend (`dist/`) |
-| `npm run preview` | `frontend/` | Preview production frontend build |
+| `npm start` | `climateos/backend/` | Run compiled backend (`dist/`) |
+| `npm run preview` | `climateos/frontend/` | Preview production frontend build |
 
 ### Verify backend is running
 
@@ -281,13 +286,13 @@ Expected response:
 npm run build
 ```
 
-- Backend output: `backend/dist/`
-- Frontend output: `frontend/dist/`
+- Backend output: `climateos/backend/dist/`
+- Frontend output: `climateos/frontend/dist/`
 
 Run the backend:
 
 ```bash
-cd backend
+cd climateos/backend
 npm start
 ```
 
@@ -339,37 +344,37 @@ ClimateOS can be deployed as **one Vercel project** — frontend (static) and Ex
 ## Project Structure
 
 ```
-climateos/
-├── api/
-│   └── index.ts             # Vercel serverless entry (exports Express app)
-├── vercel.json              # Vercel build + rewrite config
-├── backend/
-│   └── src/
-│       ├── app.ts           # Express app (shared: local dev + Vercel)
-│       ├── index.ts         # Local dev server only
-│       ├── cache/           # In-memory TTL cache
-│       ├── config/          # Environment loader
-│       ├── middleware/      # Global error handler
-│       ├── routes/          # weather, trees, usage
-│       ├── services/
-│       │   └── weatherai/   # Upstream HTTP client
-│       └── utils/           # Validators, error mapping
-│
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── layout/      # Sidebar, Header, AppLayout
-│       │   ├── trees/       # TreeAnalysisResult
-│       │   ├── ui/          # Cards, badges, meters
-│       │   └── weather/     # Charts, icons, location switcher
-│       ├── hooks/           # useWeather, useDetectLocation, useGeoDetect
-│       ├── pages/           # All 8 app pages
-│       ├── services/        # api.ts (frontend HTTP client)
-│       ├── store/           # Zustand (locations, preferences)
-│       ├── types/           # TypeScript interfaces
-│       └── utils/           # riskEngine, weatherHelpers, treeHelpers
-│
-└── README.md
+weather-ai-assignment/
+├── README.md                # This file
+└── climateos/
+    ├── api/
+    │   └── index.ts         # Vercel serverless entry (exports Express app)
+    ├── vercel.json          # Vercel build + rewrite config
+    ├── backend/
+    │   └── src/
+    │       ├── app.ts       # Express app (shared: local dev + Vercel)
+    │       ├── index.ts     # Local dev server only
+    │       ├── cache/       # In-memory TTL cache
+    │       ├── config/      # Environment loader
+    │       ├── middleware/  # Global error handler
+    │       ├── routes/      # weather, trees, usage
+    │       ├── services/
+    │       │   └── weatherai/  # Upstream HTTP client
+    │       └── utils/       # Validators, error mapping
+    │
+    └── frontend/
+        └── src/
+            ├── components/
+            │   ├── layout/  # Sidebar, Header, AppLayout
+            │   ├── trees/   # TreeAnalysisResult
+            │   ├── ui/      # Cards, badges, meters
+            │   └── weather/ # Charts, icons, location switcher
+            ├── hooks/       # useWeather, useDetectLocation, useGeoDetect
+            ├── pages/       # All 8 app pages
+            ├── services/    # api.ts (frontend HTTP client)
+            ├── store/       # Zustand (locations, preferences)
+            ├── types/       # TypeScript interfaces
+            └── utils/       # riskEngine, weatherHelpers, treeHelpers
 ```
 
 ---
@@ -438,9 +443,9 @@ All weather routes accept: `lat`, `lon`, `units` (`metric`/`imperial`), `lang`, 
 
 ### Using "Use my location"
 
-Available on **Dashboard** and **Forecast**:
+Available on **Dashboard**, **Forecast**, **Locations**, and **Recommendations**:
 
-1. Click **Use my location** in the location bar
+1. Click **Use my location** in the location bar (or on the Locations page header)
 2. Allow browser location permission when prompted (for GPS accuracy)
 3. If GPS is denied, the app falls back to IP-based detection via WeatherAI
 4. A **My Location** entry is added/updated and selected automatically
@@ -462,9 +467,10 @@ Available on **Dashboard** and **Forecast**:
 ### Smart recommendations
 
 1. Open **Smart Insights** in the sidebar
-2. Review risk scores and the "Why These Scores?" breakdown
-3. Check **Field Work Windows** for best times to operate machinery or crews
-4. Follow the **Next 24 Hours** and **Next 7 Days** action lists
+2. Select a location or use **Use my location**
+3. Review risk scores and the "Why These Scores?" breakdown
+4. Check **Field Work Windows** for best times to operate machinery or crews
+5. Follow the **Next 24 Hours** and **Next 7 Days** action lists
 
 ### Tree analysis
 
@@ -527,7 +533,7 @@ Confirm with `curl http://localhost:3001/api/health`.
 
 ### `401 Unauthorized` from API calls
 
-- Check `WEATHERAI_API_KEY` in `backend/.env`
+- Check `WEATHERAI_API_KEY` in `climateos/backend/.env`
 - Restart the backend after changing `.env`
 - Verify the key is active in your WeatherAI dashboard
 
@@ -545,7 +551,7 @@ Confirm with `curl http://localhost:3001/api/health`.
 
 ### Tree upload fails
 
-- Ensure file is JPEG, PNG, or WEBP and under 20 MB
+- Ensure file is JPEG, PNG, or WEBP and under 20 MB (4 MB on Vercel)
 - Check tree analysis quota on **Usage & Quota** (5/month on free plan)
 
 ### Port 3001 already in use
@@ -562,7 +568,7 @@ Then restart the backend.
 
 ## Security
 
-- WeatherAI API key is stored **only** in `backend/.env`
+- WeatherAI API key is stored **only** in `climateos/backend/.env` (or Vercel env vars in production)
 - The key is sent as `Authorization: Bearer wai_...` server-side only
 - Frontend never receives or stores the upstream API key
 - CORS is restricted to the configured frontend origin
