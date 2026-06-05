@@ -1,0 +1,2 @@
+BASE_URL="https://api.weather-ai.co"
+API_KEY="wai_2b496e.99714a97c8a80ef9ba89cf622c7bcb49d0bd17315b8b7ecc"
