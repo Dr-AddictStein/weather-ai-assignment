@@ -17,6 +17,7 @@ function getCorsOrigin(): string | string[] | boolean {
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(cors({ origin: getCorsOrigin() }));
 app.use(express.json());
 
